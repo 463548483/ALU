@@ -1,0 +1,17 @@
+module alu(data_operandA, data_operandB, ctrl_ALUopcode, ctrl_shiftamt, data_result, isNotEqual, isLessThan, overflow);
+
+   input [31:0] data_operandA, data_operandB;
+   input [4:0] ctrl_ALUopcode, ctrl_shiftamt;
+
+   output [31:0] data_result;
+   output isNotEqual, isLessThan, overflow;
+
+	wire cout;
+	wire [31:0] outputB;
+	wire [31:0] notB;
+	not not_gate(notB,data_operandB);
+	
+	mux_32(notB,data_operandB,ctr1_ALUopcode,outputB);
+   fa_32bit(data_operandA,outputB,ctrl_ALUopcode,overflow,data_result);
+
+endmodule
