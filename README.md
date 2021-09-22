@@ -13,7 +13,7 @@ We built bitwise AND and OR functions for two 32-bit inputs by performing bitwis
 
 We constructed 32-bit barrel shifter with SLL (Logical Left Shift) and SRA (Arithmetic Right Shift) in the modules alu_sll and alu_sra, where we used five layers of shifting to make the shift amoun called ctrl_shiftamt, with the maximum shift amount of 31 bits. And we combine these two shifting functions in the module datashift, and ctrl_ALUopcode can decide which shifting behavior should be applied.
 
-We created the functions isNotEqual and isLessThan, by performing subtraction on two input numbers and comparing their sign bits.
+We included isNotEqual and isLessThan output in the module addorsub, by performing subtraction on two input numbers and comparing their sign bits.
 
-The file alu_tb.v is the testbench for alu.v.
+For the final data_result, we first generated all the possible data output through AND&OR, SLL&SRA, ADD&SUB module. Then we used the condition criteria to finally choose the data result through the input of ctrl_ALUopcode.
  
