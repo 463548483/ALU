@@ -6,9 +6,9 @@ module alu(data_operandA, data_operandB, ctrl_ALUopcode, ctrl_shiftamt, data_res
    output [31:0] data_result;
    output isNotEqual, isLessThan, overflow;
 	
-	wire [31:0]data_result1;
-	wire [31:0]data_result2;
-	wire [31:0]data_result3;
+	wire [31:0] data_result1;
+	wire [31:0] data_result2;
+	wire [31:0] data_result3;
 
 	addorsub addorsub1(data_operandA, data_operandB, ctrl_ALUopcode[0], data_result1, isNotEqual, isLessThan, overflow);
 	andor andor1(data_operandA, data_operandB, ctrl_ALUopcode[0], data_result2);
@@ -238,9 +238,14 @@ module addorsub(data_operandA, data_operandB, ctrl_ALUopcode1, data_result, isNo
 
 	
 	assign outputB=ctrl_ALUopcode1?notB:data_operandB;
-   fa_32bit fa_32bit1(data_operandA,outputB,ctrl_ALUopcode1,overflow,data_result);
+	fa_32bit fa_32bit1(data_operandA,outputB,ctrl_ALUopcode1,overflow,data_result);
 	assign isNotEqual=data_result?(ctrl_ALUopcode1?1:0):0;
-	assign isLessThan=data_result[31]?(ctrl_ALUopcode1?1:0):0;
+	
+	wire lesssign;
+	wire lesssign2;
+	xor(lesssign,data_operandA[31],data_operandB[31]);
+	assign lesssign2=lesssign?data_operandA[31]:data_result[31];
+	assign isLessThan=isNotEqual?lesssign2:0;
 
 	
 endmodule
