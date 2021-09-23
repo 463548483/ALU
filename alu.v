@@ -252,7 +252,7 @@ endmodule
 
 module fa_32bit(a,b,ctrl_ALUopcode,ovf,sum);
 	input [31:0] a,b;
-	input [4:0]ctrl_ALUopcode;
+	input ctrl_ALUopcode;
 	
 	output ovf;
 	output[31:0] sum;
