@@ -1,3 +1,4 @@
+   
 /**
  * READ THIS DESCRIPTION!
  *
@@ -95,14 +96,17 @@ module processor(
 	 /*control signal*/
 	 wire [4:0] Opcode, Aluop;
 	 wire BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
-	 wire a_rd,a_rs,a_rt,a_rt,shamt,zeros,Imme_16,Imme_32;
+	 wire [4:0] a_rd,a_rs,a_rt, shamt;
+	 wire [1:0] zeros;
+	 wire [16:0] Imme_16;
+	 wire [31:0] Imme_32,alu_out,rstatus;
 	 
 	 //instruction fetch
 	 dffe_32 pc_dffe_32(pc, next_pc, clock, 1'b, reset);
 	 assign address_imem = pc[11:0];  //imem
 	
-	 //instruction decode
-	 assign Opcode=instr[31:27];
+	 //instruction decode, instruction=q_imem
+	 assign Opcode=q_imem[31:27];
 	 control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
 	 
 	 assign Aluop=i_R?instru[6:2]:ALUop_ctrl;
@@ -114,31 +118,33 @@ module processor(
 //	 assign R_sra=(Aluop==5b'00101)?1:0; //00000 (00101)
 
 	 
-	 assign a_rd=instr[26:22];
-	 assign a_rs=instr[21:17];
-	 assign a_rt=i_sw?instr[21:17]:instr[16:12];//?
-	 assign shamt=instr[11:7];
-	 assign zeros=instr[1:0];
-	 assign Imme_16=instr[16:0]
-	 SignExten SignExten_I(Imme_16,Imme_32);
+	 assign a_rd=q_imem[26:22];
+	 assign a_rs=q_imem[21:17];
+	 assign a_rt=i_sw?q_imem[21:17]:q_imem[16:12];//?
+	 assign shamt=q_imem[11:7];
+	 //assign zeros=q_imem[1:0];
+	 
+	 //sign extend 16bit to 32bit
+	 assign Imme_17=q_imem[16:0]
+	 SignExten SignExten_I(Imme_17,Imme_32);
 	 
 	 assign ctrl_writeEnable=Rwe;
 	 assign ctrl_writeReg=a_rd;                  
-    	 assign ctrl_readRegA=a_rs;                  
-         assign ctrl_readRegB=a_rt;
+     	 assign ctrl_readRegA=a_rs;                  
+     	 assign ctrl_readRegB=a_rt;
 	 
-	 assign data_writeReg=Rwd?dmem_out:alu_out;
+	 //assign data_writeReg=Rwd?Imme_32:alu_out;
 	 
 	 //overflow
 	 assign rstatus=is_ovf?(R_add?32d'1:(i_addi?32d'2:(R_sub?32d'3:32d'0))):32d'0;
-	 assign data_writeReg=overflow? :aluout;
+	 assign data_writeReg=i_lw? q_dmem:((R_add|R_sub|i_addi)?(is_ovf?rstatus:alu_out):alu_out);
 	 
-	 //sign extend 16bit to 32bit
+
 	 
 	 
 	 /*alu*/
 	 //if (ALUop_ctrl==1)
-	 assign Alu_dataB=ALUinB? signex?data_readRegB;
+	 assign Alu_dataB=ALUinB? Imme_32:data_readRegB;
 	 alu alu_1(data_readRegA, Alu_dataB, ALUop_ctrl, shamt, alu_out, isNotEqual, isLessThan, overflow);
 	
 	 //result store
@@ -155,11 +161,11 @@ module processor(
 
 endmodule
 
-module SignExten(s_16, s_32);
+module SignExten(s_17, s_32);
 
-input [15:0] s_16; // 16-bit input
+input [16:0] s_17; // 16-bit input
 output [31:0] s_32; // 32-bit output
 
-assign s_32 = { 16{s_16[15]}, s_16 };
+assign s_32 = { 15{s_17[16]}, s_17 };
 
 endmodule
