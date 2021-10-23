@@ -1,11 +1,11 @@
-module dffe_32(q, d, clk, en, clr);
+module dffe_32(q, d, clk, en, rst);
    
    //Inputs
    input [31:0]d; 
-	input clk, en, clr;
+	input clk, en, rst;
    
    //Internal wire
-   wire clr;
+   wire rst;
 
    //Output
    output [31:0]q;
@@ -20,9 +20,9 @@ module dffe_32(q, d, clk, en, clr);
    end
 
    //Set value of q on positive edge of the clock or clear
-   always @(posedge clk or posedge clr) begin
+   always @(posedge clk or posedge rst) begin
        //If clear is high, set q to 0
-       if (clr) begin
+       if (rst) begin
            q <= 32'h00000000;
        //If enable is high, set q to the value of d
        end else if (en) begin
