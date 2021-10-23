@@ -142,7 +142,7 @@ module processor(
 	 alu alu_1(data_readRegA, Alu_dataB, ALUop_ctrl, shamt, alu_out, isNotEqual, isLessThan, overflow);
 	
 	 //result store
-	address_dmem = alu_out[11:0]; //dmem
+	 address_dmem = alu_out[11:0]; //dmem
 	 data = data_readRegB;
 	 wren = i_sw;
 	
