@@ -91,11 +91,17 @@ module processor(
     input [31:0] data_readRegA, data_readRegB;
 
     /* YOUR CODE STARTS HERE */
+	 wire [31:0] pc, next_pc;
 	 /*control signal*/
 	 wire [4:0] Opcode, Aluop;
 	 wire BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
 	 wire a_rd,a_rs,a_rt,a_rt,shamt,zeros,Imme_16,Imme_32;
 	 
+	 //instruction fetch
+	 dffe_32 pc_dffe_32(pc, next_pc, clock, 1'b, reset);
+	 assign address_imem = pc[11:0];  //imem
+	
+	 //instruction decode
 	 assign Opcode=instr[31:27];
 	 control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
 	 
@@ -118,8 +124,8 @@ module processor(
 	 
 	 assign ctrl_writeEnable=Rwe;
 	 assign ctrl_writeReg=a_rd;                  
-    assign ctrl_readRegA=a_rs;                  
-    assign ctrl_readRegB=a_rt;
+    	 assign ctrl_readRegA=a_rs;                  
+         assign ctrl_readRegB=a_rt;
 	 
 	 assign data_writeReg=Rwd?dmem_out:alu_out;
 	 
@@ -133,8 +139,16 @@ module processor(
 	 /*alu*/
 	 //if (ALUop_ctrl==1)
 	 assign Alu_dataB=ALUinB? signex?data_readRegB;
-	 alu alu_1(data_readRegA, Alu_dataB, ALUop_ctrl,
-			shamt, alu_out, isNotEqual, isLessThan, overflow);
+	 alu alu_1(data_readRegA, Alu_dataB, ALUop_ctrl, shamt, alu_out, isNotEqual, isLessThan, overflow);
+	
+	 //result store
+	address_dmem = alu_out[11:0]; //dmem
+	 data = data_readRegB;
+	 wren = i_sw;
+	
+	 //Put this code at the end of all codes!
+	 //update next instruction
+	 next_pc = pc + 32'b1;
 	 
 	 
 	 
