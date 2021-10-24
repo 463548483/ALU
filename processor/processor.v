@@ -98,20 +98,21 @@ module processor(
 	 wire BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
 	 wire [4:0] a_rd,a_rs,a_rt, shamt;
 	 wire [1:0] zeros;
-	 wire [16:0] Imme_16;
+	 wire [16:0] Imme_17;
 	 wire [31:0] Imme_32,alu_out,rstatus;
+	 wire overflow;
 	 
 	 //instruction fetch
-	 dffe_32 pc_dffe_32(pc, next_pc, clock, 1'b, reset);
+	 dffe_32 pc_dffe_32(pc, next_pc, clock, 1'b1, reset);
 	 assign address_imem = pc[11:0];  //imem
 	
 	 //instruction decode, instruction=q_imem
 	 assign Opcode=q_imem[31:27];
 	 control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
 	 
-	 assign Aluop=i_R?instru[6:2]:ALUop_ctrl;
-	 assign R_add=(Aluop==5b'00000)?1:0; //00000 (00000)
-	 assign R_sub=(Aluop==5b'00001)?1:0; //00000 (00001)
+	 assign Aluop=i_R?q_imem[6:2]:ALUop_ctrl;
+	 assign R_add=(Aluop==5'b00000)?1:0; //00000 (00000)
+	 assign R_sub=(Aluop==5'b00001)?1:0; //00000 (00001)
 //	 assign R_and=(Aluop==5b'00010)?1:0; //00000 (00010)
 //	 assign R_or=(Aluop==5b'00011)?1:0; //00000 (00011)
 //	 assign R_sll=(Aluop==5b'00100)?1:0; //00000 (00100)
@@ -125,7 +126,7 @@ module processor(
 	 //assign zeros=q_imem[1:0];
 	 
 	 //sign extend 16bit to 32bit
-	 assign Imme_17=q_imem[16:0]
+	 assign Imme_17=q_imem[16:0];
 	 SignExten SignExten_I(Imme_17,Imme_32);
 	 
 	 assign ctrl_writeEnable=Rwe;
@@ -136,25 +137,27 @@ module processor(
 	 //assign data_writeReg=Rwd?Imme_32:alu_out;
 	 
 	 //overflow
-	 assign rstatus=is_ovf?(R_add?32d'1:(i_addi?32d'2:(R_sub?32d'3:32d'0))):32d'0;
-	 assign data_writeReg=i_lw? q_dmem:((R_add|R_sub|i_addi)?(is_ovf?rstatus:alu_out):alu_out);
+	 assign rstatus=overflow?(R_add?32'd1:(i_addi?32'd2:(R_sub?32'd3:32'd0))):32'd0;
+	 assign data_writeReg=i_lw? q_dmem:((R_add|R_sub|i_addi)?(overflow?rstatus:alu_out):alu_out);
 	 
 
 	 
 	 
 	 /*alu*/
 	 //if (ALUop_ctrl==1)
+	 wire [31:0]Alu_dataB;
+	 wire isNotEqual, isLessThan;
 	 assign Alu_dataB=ALUinB? Imme_32:data_readRegB;
 	 alu alu_1(data_readRegA, Alu_dataB, ALUop_ctrl, shamt, alu_out, isNotEqual, isLessThan, overflow);
 	
 	 //result store
-	 address_dmem = alu_out[11:0]; //dmem
-	 data = data_readRegB;
-	 wren = i_sw;
+	 assign address_dmem = alu_out[11:0]; //dmem
+	 assign data = data_readRegB;
+	 assign wren = i_sw;
 	
 	 //Put this code at the end of all codes!
 	 //update next instruction
-	 next_pc = pc + 32'b1;
+	 assign next_pc = pc + 32'b1;
 	 
 	 
 	 
@@ -166,6 +169,39 @@ module SignExten(s_17, s_32);
 input [16:0] s_17; // 16-bit input
 output [31:0] s_32; // 32-bit output
 
-assign s_32 = { 15{s_17[16]}, s_17 };
+assign s_32 = { {15{s_17[16]}}, s_17 };
 
+endmodule
+
+module dffe_32(q, d, clk, en, rst);
+   
+   //Inputs
+   input [31:0]d; 
+	input clk, en, rst;
+   
+   //Internal wire
+   wire rst;
+
+   //Output
+   output [31:0]q;
+   
+   //Register
+   reg [31:0]q;
+
+   //Intialize q to 0
+   initial
+   begin
+       q = 32'h00000000;
+   end
+
+   //Set value of q on positive edge of the clock or clear
+   always @(posedge clk or posedge rst) begin
+       //If clear is high, set q to 0
+       if (rst) begin
+           q <= 32'h00000000;
+       //If enable is high, set q to the value of d
+       end else if (en) begin
+           q <= d;
+       end
+   end
 endmodule
