@@ -8,6 +8,9 @@ Lijing Yin(ly161) & Zoe Wang(zw255)
 Design Implementation:
 =======
 
+# Clock divider
+Set different clocks for 4 elements. imem and dmem have clocks 4 times faster than processor and regfile.
+
 
 # Instruction Decode to be signal control
 take q_imem as input
@@ -21,9 +24,6 @@ $rstatus = 1 for add overflow, $rstatus = 2 for addi overflow, $rstatus = 3 for 
 
 # ALU design
 ALU is used to calculate for add/sub/sll/sra operation and output from dmem address or register data write
-
-# Clock divider
-Set different clocks for 4 elements. imem and dmem have clocks 4 times faster than processor and regfile.
 
 # Memory
 Design imem as a 1-port ROM. And design dmem as a 1-port RAM. Both come with the corresponding memorization initialization files imem.mif and dmem.mif to test for the working.
