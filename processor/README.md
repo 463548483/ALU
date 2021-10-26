@@ -1,0 +1,13 @@
+
+# Instruction Decode to be signal control
+take q_imem as input
+1. Take Opcode=q_imem[31:27] to decide the R type or I type instruction and output other control signal.
+2. Divided q_imem[26:0] as rd, rt, rs, immediate or shamt
+3. Sign extend for immediate instruction
+4. Assign input for dmem or regfile write
+
+# Overflow 
+$rstatus = 1 for add overflow, $rstatus = 2 for addi overflow, $rstatus = 3 for sub overflow
+
+# ALU design
+ALU is used to calculate for add/sub/sll/sra operation and output from dmem address or register data write
