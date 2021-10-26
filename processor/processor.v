@@ -70,7 +70,7 @@ module processor(
     ctrl_readRegB,                  // O: Register to read from port B of regfile
     data_writeReg,                  // O: Data to write to for regfile
     data_readRegA,                  // I: Data from port A of regfile
-    data_readRegB                   // I: Data from port B of regfile
+    data_readRegB							 // I: Data from port B of regfile
 );
     // Control signals
     input clock, reset;
@@ -93,6 +93,11 @@ module processor(
 
     /* YOUR CODE STARTS HERE */
 	 wire [31:0] pc, next_pc;
+	 
+	 //instruction fetch
+	 dffe_32 pc_dffe_32(pc, next_pc, clock, 1'b1, reset);
+	 assign address_imem = pc[11:0];  //imem
+	 
 	 /*control signal*/
 	 wire [4:0] Opcode, Aluop;
 	 wire BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
@@ -102,9 +107,8 @@ module processor(
 	 wire [31:0] Imme_32,alu_out,rstatus;
 	 wire overflow;
 	 
-	 //instruction fetch
-	 dffe_32 pc_dffe_32(pc, next_pc, clock, 1'b1, reset);
-	 assign address_imem = pc[11:0];  //imem
+
+	 //assign q_im=q_imem[26:22];
 	
 	 //instruction decode, instruction=q_imem
 	 assign Opcode=q_imem[31:27];
@@ -121,7 +125,7 @@ module processor(
 	 
 	 assign a_rd=q_imem[26:22];
 	 assign a_rs=q_imem[21:17];
-	 assign a_rt=i_sw?q_imem[21:17]:q_imem[16:12];//?
+	 assign a_rt=i_sw?q_imem[26:22]:q_imem[16:12];//?
 	 assign shamt=q_imem[11:7];
 	 //assign zeros=q_imem[1:0];
 	 
@@ -129,10 +133,11 @@ module processor(
 	 assign Imme_17=q_imem[16:0];
 	 SignExten SignExten_I(Imme_17,Imme_32);
 	 
+	 //assign regfile input
 	 assign ctrl_writeEnable=Rwe;
 	 assign ctrl_writeReg=a_rd;                  
-     	 assign ctrl_readRegA=a_rs;                  
-     	 assign ctrl_readRegB=a_rt;
+    assign ctrl_readRegA=a_rs;                  
+    assign ctrl_readRegB=a_rt;
 	 
 	 //assign data_writeReg=Rwd?Imme_32:alu_out;
 	 
@@ -143,12 +148,11 @@ module processor(
 
 	 
 	 
-	 /*alu*/
-	 //if (ALUop_ctrl==1)
+	 //alu calculation
 	 wire [31:0]Alu_dataB;
 	 wire isNotEqual, isLessThan;
 	 assign Alu_dataB=ALUinB? Imme_32:data_readRegB;
-	 alu alu_1(data_readRegA, Alu_dataB, ALUop_ctrl, shamt, alu_out, isNotEqual, isLessThan, overflow);
+	 alu alu_1(data_readRegA, Alu_dataB, Aluop, shamt, alu_out, isNotEqual, isLessThan, overflow);
 	
 	 //result store
 	 assign address_dmem = alu_out[11:0]; //dmem
@@ -204,4 +208,26 @@ module dffe_32(q, d, clk, en, rst);
            q <= d;
        end
    end
+endmodule
+
+module control_logic(
+Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
+	
+	input [4:0] Opcode;
+	output BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw;
+
+	assign i_R=(Opcode==5'b00000)?1:0;//00000
+	assign i_addi=(Opcode==5'b00101)?1:0; //00101
+	assign i_sw=(Opcode==5'b00111)?1:0; //00111
+	assign i_lw=(Opcode==5'b01000)?1:0; //01000
+
+	assign BR=0;
+	assign JP=0; 
+	assign ALUinB=i_addi|i_lw|i_sw; 
+	assign ALUop=0;
+	assign DMwe=i_sw; 
+	assign Rwe=i_R|i_lw|i_addi;
+	assign Rdst=i_R;
+	assign Rwd=i_lw;
+	
 endmodule
