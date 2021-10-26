@@ -1,4 +1,4 @@
-# ECE-550_ALU
+# ECE-550_Processor
 
 
 Author:
