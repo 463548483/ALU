@@ -1,3 +1,13 @@
+# ECE-550_ALU
+
+
+Author:
+=======
+Lijing Yin(ly161) & Zoe Wang(zw255)
+
+Design Implementation:
+=======
+
 
 # Instruction Decode to be signal control
 take q_imem as input
