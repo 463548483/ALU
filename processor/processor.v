@@ -96,6 +96,7 @@ module processor(
 	 
 	 //instruction fetch
 	 dffe_32 pc_dffe_32(pc, next_pc, clock, 1'b1, reset);
+	
 	 assign address_imem = pc[11:0];  //imem
 	 
 	 /*control signal*/
@@ -112,7 +113,9 @@ module processor(
 	
 	 //instruction decode, instruction=q_imem
 	 assign Opcode=q_imem[31:27];
+	   
 	 control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
+	 
 	 
 	 assign Aluop=i_R?q_imem[6:2]:ALUop_ctrl;
 	 assign R_add=(Aluop==5'b00000)?1:0; //00000 (00000)
@@ -123,7 +126,7 @@ module processor(
 //	 assign R_sra=(Aluop==5b'00101)?1:0; //00000 (00101)
 
 	 
-	 assign a_rd=q_imem[26:22];
+	 assign a_rd=(R_add|R_sub|i_addi)?(overflow?5'd0:q_imem[26:22]):q_imem[26:22];
 	 assign a_rs=q_imem[21:17];
 	 assign a_rt=i_sw?q_imem[26:22]:q_imem[16:12];//?
 	 assign shamt=q_imem[11:7];
@@ -161,9 +164,9 @@ module processor(
 	
 	 //Put this code at the end of all codes!
 	 //update next instruction
-	 assign next_pc = pc + 32'b1;
+	 //?assign next_pc = i_JII?q_imem[26:22]:(i_JI?q_imem[26:0]:(i_I?(pc + 32'b1 +q_imem[16:0]):(pc + 32'b1 )));;
 	 
-	 
+	 assign next_pc=pc+32'b1;
 	 
 
 endmodule
