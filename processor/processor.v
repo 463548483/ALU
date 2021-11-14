@@ -126,7 +126,7 @@ module processor(
 //	 assign R_sra=(Aluop==5b'00101)?1:0; //00000 (00101)
 
 	 
-	 assign a_rd=(R_add|R_sub|i_addi)?(overflow?5'd0:q_imem[26:22]):q_imem[26:22];
+	assign a_rd=(R_add|R_sub|i_addi)?(overflow?5'd30:q_imem[26:22]):q_imem[26:22];
 	 assign a_rs=q_imem[21:17];
 	 assign a_rt=i_sw?q_imem[26:22]:q_imem[16:12];//?
 	 assign shamt=q_imem[11:7];
