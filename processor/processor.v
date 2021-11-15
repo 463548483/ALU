@@ -144,7 +144,7 @@ module processor(
 	 //assign regfile input
 	 assign ctrl_writeEnable=Rwe;
 	 assign ctrl_writeReg=a_rd;                  
-    assign ctrl_readRegA=a_rs;                  
+    assign ctrl_readRegA=i_jr? 5'b11111 :a_rs;//newz                                   
     assign ctrl_readRegB=a_rt;
 	 
 	 //assign data_writeReg=Rwd?Imme_32:alu_out;
@@ -171,8 +171,9 @@ module processor(
 	
 	 //Put this code at the end of all codes!
 	 //update next instruction
-	 //?assign next_pc = i_JII?q_imem[26:22]:(i_JI?q_imem[26:0]:(i_I?(pc + 32'b1 +q_imem[16:0]):(pc + 32'b1 )));;
+	 assign next_pc = i_jr?data_readRegA:((i_j|i_jal|i_bex)?q_imem[26:0]:((i_bne|i_blt)?(pc + 32'b1 +Imme_32):(pc + 32'b1 )));//newz
 	 
+	 //assign next_pc=pc+32'b1;
 endmodule
 
 module SignExten(s_17, s_32);
