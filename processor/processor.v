@@ -102,19 +102,23 @@ module processor(
 	 /*control signal*/
 	 wire [4:0] Opcode, Aluop;
 	 wire BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
+	 wire i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex;  //new
 	 wire [4:0] a_rd,a_rs,a_rt, shamt;
 	 wire [1:0] zeros;
 	 wire [16:0] Imme_17;
 	 wire [31:0] Imme_32,alu_out,rstatus;
 	 wire overflow;
+	 wire [26:0] address_T_27; //new
+	 wire [31:0] address_T_32; //new
+	 wire [31:0] next_pc_1; //new
 	 
-
 	 //assign q_im=q_imem[26:22];
 	
 	 //instruction decode, instruction=q_imem
 	 assign Opcode=q_imem[31:27];
 	   
-	 control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
+	 //control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
+	 control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
 	 
 	 
 	 assign Aluop=i_R?q_imem[6:2]:ALUop_ctrl;
@@ -126,9 +130,10 @@ module processor(
 //	 assign R_sra=(Aluop==5b'00101)?1:0; //00000 (00101)
 
 	 
-	assign a_rd=(R_add|R_sub|i_addi)?(overflow?5'd30:q_imem[26:22]):q_imem[26:22];
-	 assign a_rs=q_imem[21:17];
-	 assign a_rt=i_sw?q_imem[26:22]:q_imem[16:12];//?
+	 assign a_rd=i_setx?5'd30:(i_jal?5'd31:((R_add|R_sub|i_addi)?(overflow?5'd30:q_imem[26:22]):q_imem[26:22]));  //new
+	 assign a_rs=i_bex?5'd30:q_imem[21:17];  //new
+	 //assign a_rt=i_sw?q_imem[26:22]:q_imem[16:12];//?
+	 assign a_rt=i_bex?5'd0:q_imem[16:12];  //new
 	 assign shamt=q_imem[11:7];
 	 //assign zeros=q_imem[1:0];
 	 
@@ -144,12 +149,14 @@ module processor(
 	 
 	 //assign data_writeReg=Rwd?Imme_32:alu_out;
 	 
+	 assign address_T_27 = q_imem[26:0];    //new
+	 assign address_T_32 = {5'd0, address_T_27};    //new
+	 assign next_pc_1 = pc+32'd1;  //new
+	 
 	 //overflow
 	 assign rstatus=overflow?(R_add?32'd1:(i_addi?32'd2:(R_sub?32'd3:32'd0))):32'd0;
-	 assign data_writeReg=i_lw? q_dmem:((R_add|R_sub|i_addi)?(overflow?rstatus:alu_out):alu_out);
-	 
-
-	 
+	 //assign data_writeReg=i_lw? q_dmem:((R_add|R_sub|i_addi)?(overflow?rstatus:alu_out):alu_out);
+	 assign data_writeReg=i_setx? address_T_32: (i_jal?next_pc_1:(i_lw? q_dmem:((R_add|R_sub|i_addi)?(overflow?rstatus:alu_out):alu_out))); //new
 	 
 	 //alu calculation
 	 wire [31:0]Alu_dataB;
@@ -213,24 +220,36 @@ module dffe_32(q, d, clk, en, rst);
    end
 endmodule
 
+/*module control_logic(
+Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);*/
 module control_logic(
-Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
-	
+Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
+
 	input [4:0] Opcode;
 	output BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw;
+	output i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex;  //new
 
 	assign i_R=(Opcode==5'b00000)?1:0;//00000
 	assign i_addi=(Opcode==5'b00101)?1:0; //00101
 	assign i_sw=(Opcode==5'b00111)?1:0; //00111
 	assign i_lw=(Opcode==5'b01000)?1:0; //01000
+	assign i_jal=(Opcode==5'b00011)?1:0; //00011   //new
+	assign i_setx=(Opcode==5'b10101)?1:0;  //10101   //new
+	assign i_j=(Opcode==5'b00001)?1:0; //00001  //new
+	assign i_bne=(Opcode==5'b00010)?1:0; //00010  //new
+	assign i_jr=(Opcode==5'b00100)?1:0; //00100  //new
+	assign i_blt=(Opcode==5'b00110)?1:0; //00110  //new
+	assign i_bex=(Opcode==5'b10110)?1:0; //10110  //new
 
 	assign BR=0;
-	assign JP=0; 
+	assign JP=i_j?1:0;  //new
 	assign ALUinB=i_addi|i_lw|i_sw; 
 	assign ALUop=0;
 	assign DMwe=i_sw; 
-	assign Rwe=i_R|i_lw|i_addi;
+	assign Rwe=i_R|i_lw|i_addi|i_jal|i_setx;  //new
 	assign Rdst=i_R;
 	assign Rwd=i_lw;
+	//assign i_jI=(Opcode==(5'b00001 || 5'b00011 || 5'b10110 || 5'b10101))?1:0;  //new
+	//assign i_jII=(Opcode==5'b00100)?1:0;  //new
 	
 endmodule
