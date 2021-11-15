@@ -171,7 +171,9 @@ module processor(
 	
 	 //Put this code at the end of all codes!
 	 //update next instruction
-	 assign next_pc = i_jr?data_readRegA:((i_j|i_jal|i_bex)?q_imem[26:0]:((i_bne|i_blt)?(pc + 32'b1 +Imme_32):(pc + 32'b1 )));//newz
+	 wire [31:0]T;
+	 assign T[26:0]=q_imem[26:0];
+	 assign next_pc = i_jr?data_readRegA:((i_j|i_jal|i_bex)?T:((i_bne|i_blt)?(pc + 32'b1 +Imme_32):(pc + 32'b1 )));//newz
 	 
 	 //assign next_pc=pc+32'b1;
 endmodule
