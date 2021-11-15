@@ -173,12 +173,6 @@ module processor(
 	 //update next instruction
 	 //?assign next_pc = i_JII?q_imem[26:22]:(i_JI?q_imem[26:0]:(i_I?(pc + 32'b1 +q_imem[16:0]):(pc + 32'b1 )));;
 	 
-	 //assign next_pc=pc+32'b1;
-	 assign ctrl_pc_T = i_j | i_jal | (i_bex & isNotEqual); // contro signal for PC = T
-	 assign ctrl_pc_N_1 = (i_bne & isNotEqual)| (i_blt & ~isLessThan & isNotEqual); // contro signal for PC = PC+N+1
-	 assign next_pc = i_jr? data_readRegA : (ctrl_pc_T? address_T_32 : (ctrl_pc_N_1? pc+Imme_32+32'd1 : pc+32'd1));//pc -> pc-next
-	 
-
 endmodule
 
 module SignExten(s_17, s_32);
