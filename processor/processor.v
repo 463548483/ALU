@@ -101,7 +101,7 @@ module processor(
 	 
 	 /*control signal*/
 	 wire [4:0] Opcode, Aluop;
-	 wire BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
+	 wire ALUinB, ALUop_ctrl, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
 	 wire i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex;  //new
 	 wire [4:0] a_rd,a_rs,a_rt, shamt;
 	 wire [1:0] zeros;
@@ -117,8 +117,8 @@ module processor(
 	 //instruction decode, instruction=q_imem
 	 assign Opcode=q_imem[31:27];
 	   
-	 //control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
-	 control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
+	 //control_logic control_1(Opcode, ALUinB, ALUop_ctrl, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
+	 control_logic control_1(Opcode, ALUinB, ALUop_ctrl, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
 	 
 	 
 	 assign Aluop=i_R?q_imem[6:2]:ALUop_ctrl;
@@ -173,7 +173,10 @@ module processor(
 	 //update next instruction
 	 //?assign next_pc = i_JII?q_imem[26:22]:(i_JI?q_imem[26:0]:(i_I?(pc + 32'b1 +q_imem[16:0]):(pc + 32'b1 )));;
 	 
-	 assign next_pc=pc+32'b1;
+	 //assign next_pc=pc+32'b1;
+	 assign ctrl_pc_T = i_j | i_jal | (i_bex & isNotEqual); // contro signal for PC = T
+	 assign ctrl_pc_N_1 = (i_bne & isNotEqual)| (i_blt & ~isLessThan & isNotEqual); // contro signal for PC = PC+N+1
+	 assign next_pc = i_jr? data_readRegA : (ctrl_pc_T? address_T_32 : (ctrl_pc_N_1? pc+Imme_32+32'd1 : pc+32'd1));//pc -> pc-next
 	 
 
 endmodule
@@ -221,12 +224,12 @@ module dffe_32(q, d, clk, en, rst);
 endmodule
 
 /*module control_logic(
-Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);*/
+Opcode, ALUinB, ALUop, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);*/
 module control_logic(
-Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
+Opcode, ALUinB, ALUop, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
 
 	input [4:0] Opcode;
-	output BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw;
+	output ALUinB, ALUop, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw;
 	output i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex;  //new
 
 	assign i_R=(Opcode==5'b00000)?1:0;//00000
@@ -241,11 +244,8 @@ Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_ja
 	assign i_blt=(Opcode==5'b00110)?1:0; //00110  //new
 	assign i_bex=(Opcode==5'b10110)?1:0; //10110  //new
 
-	assign BR=0;
-	assign JP=i_j?1:0;  //new
 	assign ALUinB=i_addi|i_lw|i_sw; 
 	assign ALUop=0;
-	assign DMwe=i_sw; 
 	assign Rwe=i_R|i_lw|i_addi|i_jal|i_setx;  //new
 	assign Rdst=i_R;
 	assign Rwd=i_lw;
