@@ -143,8 +143,10 @@ module processor(
 	 //assign regfile input
 	 assign ctrl_writeEnable=Rwe;
 	 assign ctrl_writeReg=a_rd;                  
-    assign ctrl_readRegA=i_jr? q_imem[26:22]:a_rs;//new                  
-    assign ctrl_readRegB=a_rt;
+    assign ctrl_readRegA=i_jr? q_imem[26:22]:a_rs;//newz                  
+    assign ctrl_readRegB=a_rt
+	 assign ctrl_pc_JI = i_j | i_jal | (i_bex & isNotEqual); // JI type contro PC = T
+	 assign ctrl_pc_I =  (i_blt & ~isLessThan & isNotEqual)|(i_bne & isNotEqual); // I type control PC = PC+N+1
 	 
 	 //assign data_writeReg=Rwd?Imme_32:alu_out;
 	 
@@ -170,9 +172,11 @@ module processor(
 	
 	 //Put this code at the end of all codes!
 	 //update next instruction
-	 assign next_pc = i_jr?data_readRegA:((i_j|i_jal|i_bex)?q_imem[26:0]:((i_bne|i_blt)?(pc + 32'b1 +Imme_32):(pc + 32'b1 )));//new
+	 //assign next_pc = i_jr?data_readRegA:((i_j|i_jal|i_bex)?q_imem[26:0]:((i_bne|i_blt)?(pc + 32'b1 +Imme_32):(pc + 32'b1 )));//new
 	 
 	 //assign next_pc=pc+32'b1;
+	 
+	  assign next_pc = i_jr? data_readRegA : (ctrl_pc_JI? address_T_32 : (ctrl_pc_I? pc+Imme_32+32'd1 : pc+32'd1));//newz
 	 
 	 
 
