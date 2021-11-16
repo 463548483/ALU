@@ -144,7 +144,7 @@ module processor(
 	 assign ctrl_writeEnable=Rwe;
 	 assign ctrl_writeReg=a_rd;                  
     assign ctrl_readRegA=i_jr? q_imem[26:22]:a_rs;//newz                  
-    assign ctrl_readRegB=a_rt
+    assign ctrl_readRegB=a_rt;
 	 assign ctrl_pc_JI=i_jal| i_j|(i_bex&isNotEqual); // JI type contro PC = T
 	 assign ctrl_pc_I=(i_blt&~isLessThan&isNotEqual)|(i_bne&isNotEqual); // I type control PC = PC+N+1
 	 
