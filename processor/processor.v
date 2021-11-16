@@ -176,7 +176,7 @@ module processor(
 	 
 	 //assign next_pc=pc+32'b1;
 	 
-	  assign next_pc = i_jr? data_readRegA : (ctrl_pc_JI? address_T_32 : (ctrl_pc_I? pc+32'b1+Imme_32 : pc+32'd1));//newz
+	  assign next_pc = i_jr? data_readRegA : (ctrl_pc_JI? address_T_32 : (ctrl_pc_I? pc+32'b1+Imme_32 : pc+32'b1));//newz
 	 
 	 
 
