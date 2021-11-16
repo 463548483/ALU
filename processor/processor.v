@@ -1,3 +1,4 @@
+   
 /**
  * READ THIS DESCRIPTION!
  *
@@ -100,7 +101,7 @@ module processor(
 	 
 	 /*control signal*/
 	 wire [4:0] Opcode, Aluop;
-	 wire BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
+	 wire ALUinB, ALUop_ctrl, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, R_add, R_sub;
 	 wire i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex;  //new
 	 wire [4:0] a_rd,a_rs,a_rt, shamt;
 	 wire [1:0] zeros;
@@ -116,8 +117,8 @@ module processor(
 	 //instruction decode, instruction=q_imem
 	 assign Opcode=q_imem[31:27];
 	   
-	 //control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
-	 control_logic control_1(Opcode, BR, JP,ALUinB, ALUop_ctrl, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
+	 //control_logic control_1(Opcode, ALUinB, ALUop_ctrl, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);
+	 control_logic control_1(Opcode, ALUinB, ALUop_ctrl, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
 	 
 	 
 	 assign Aluop=i_R?q_imem[6:2]:ALUop_ctrl;
@@ -143,10 +144,11 @@ module processor(
 	 //assign regfile input
 	 assign ctrl_writeEnable=Rwe;
 	 assign ctrl_writeReg=a_rd;                  
-    assign ctrl_readRegA=i_jr? q_imem[26:22]:a_rs;//newz                  
-    assign ctrl_readRegB=a_rt;
+    assign ctrl_readRegA=(i_blt|i_bne|i_jr)?q_imem[26:22]:a_rs;      //???            
+    assign ctrl_readRegB=(i_bne|i_blt)?q_imem[21:17]:a_rt;
 	 assign ctrl_pc_JI=i_jal| i_j|(i_bex&isNotEqual); // JI type contro PC = T
-	 assign ctrl_pc_I=(i_blt&~isLessThan&isNotEqual)|(i_bne&isNotEqual); // I type control PC = PC+N+1
+	 assign ctrl_pc_I=(i_blt&isLessThan&isNotEqual)|(i_bne&isNotEqual); // I type control PC = PC+N+1
+	 
 	 
 	 //assign data_writeReg=Rwd?Imme_32:alu_out;
 	 
@@ -172,12 +174,8 @@ module processor(
 	
 	 //Put this code at the end of all codes!
 	 //update next instruction
-	 //assign next_pc = i_jr?data_readRegA:((i_j|i_jal|i_bex)?q_imem[26:0]:((i_bne|i_blt)?(pc + 32'b1 +Imme_32):(pc + 32'b1 )));//new
-	 
+	 assign next_pc = i_jr? data_readRegA : (ctrl_pc_JI? address_T_32 : (ctrl_pc_I? pc+32'b1+Imme_32 : pc+32'b1));//newz
 	 //assign next_pc=pc+32'b1;
-	 
-	  assign next_pc = i_jr? data_readRegA : (ctrl_pc_JI? address_T_32 : (ctrl_pc_I? pc+32'b1+Imme_32 : pc+32'b1));//newz
-	 
 	 
 
 endmodule
@@ -225,12 +223,12 @@ module dffe_32(q, d, clk, en, rst);
 endmodule
 
 /*module control_logic(
-Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);*/
+Opcode, ALUinB, ALUop, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw);*/
 module control_logic(
-Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
+Opcode, ALUinB, ALUop, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex);  //new
 
 	input [4:0] Opcode;
-	output BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw;
+	output ALUinB, ALUop, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw;
 	output i_jal, i_setx, i_j, i_bne, i_jr, i_blt, i_bex;  //new
 
 	assign i_R=(Opcode==5'b00000)?1:0;//00000
@@ -245,11 +243,8 @@ Opcode, BR, JP,ALUinB, ALUop, DMwe, Rwe, Rdst, Rwd,i_R, i_addi, i_sw, i_lw, i_ja
 	assign i_blt=(Opcode==5'b00110)?1:0; //00110  //new
 	assign i_bex=(Opcode==5'b10110)?1:0; //10110  //new
 
-	assign BR=0;
-	assign JP=i_j?1:0;  //new
 	assign ALUinB=i_addi|i_lw|i_sw; 
 	assign ALUop=0;
-	assign DMwe=i_sw; 
 	assign Rwe=i_R|i_lw|i_addi|i_jal|i_setx;  //new
 	assign Rdst=i_R;
 	assign Rwd=i_lw;
