@@ -37,4 +37,4 @@ ALU is used to compare registerA and register B to see if equal or less than
 Design imem as a 1-port ROM. And design dmem as a 1-port RAM. Both come with the corresponding memorization initialization files imem.mif and dmem.mif to test for the working.
 
 # testing
-We run both functionional simulation and runtime simulation. The resulta are same as expected. 
+We ran both functionional simulation and runtime simulation. The resulta are same as expected. 
